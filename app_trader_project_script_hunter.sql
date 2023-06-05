@@ -144,9 +144,9 @@ SELECT primary_genre, COUNT(*)--------------------------------COUNT BY GENRE
 										(CASE WHEN price < 2.50 THEN 25000
 											WHEN price >= 2.50 THEN price * 10000 END) AS acquire_cost
 								FROM app_store_apps
-								WHERE ROUND(((((rating/.25)*6)+12)/12),1) > 10
+								WHERE ROUND(((((rating/.25)*6)+12)/12),1) >= 10
 									AND (CASE WHEN price < 2.50 THEN 25000
-											WHEN price >= 2.50 THEN price * 10000 END) < 35000
+											WHEN price >= 2.50 THEN price * 10000 END) < 25001
 									AND content_rating = '4+'
 								ORDER BY lifespan_years DESC, acquire_cost ASC) AS desired_apps
 GROUP BY primary_genre
@@ -176,7 +176,7 @@ WHERE name IN (SELECT name FROM (SELECT *,
 FROM app_store_apps
 WHERE ROUND(((((rating/.25)*6)+12)/12),1) > 9
 	AND (CASE WHEN price < 2.50 THEN 25000
-		 	WHEN price >= 2.50 THEN price * 10000 END) < 50000
+		 	WHEN price >= 2.50 THEN price * 10000 END) < 25001
 	AND content_rating = '4+'
 	AND primary_genre = 'Games'
 ORDER BY lifespan_years DESC, acquire_cost ASC) AS apps)
@@ -202,10 +202,31 @@ WHERE (name ILIKE '%America%'
 		OR category = 'GAME')
 	AND (app_store_apps.rating > 4.0
 		 OR play_store_apps.rating > 4.0)
-ORDER BY app_store_apps.price
+ORDER BY app_store_apps.price;
 
 
 
+--------------3C-top 10 list---------------------FINAL
+SELECT name,  
+		ROUND(((((rating/.25)*6)+12)/12),1) as lifespan_years,
+		(CASE WHEN price < 2.50 THEN 25000
+		 	WHEN price >= 2.50 THEN price * 10000 END)::MONEY AS acquire_cost,
+		((ROUND(((((rating/.25)*6)+12)/12),1)) * 12 * 5000)::MONEY AS potential_profit
+	FROM app_store_apps
+		WHERE primary_genre ILIKE 'games'
+		AND rating > 4.25
+		AND review_count::NUMERIC > 8000
+		AND content_rating = '4+'
+		AND price < 2.51
+		AND name IN 
+			(SELECT name FROM play_store_apps
+				WHERE category = 'GAME'
+				AND rating > 4.25
+				AND review_count > 8000
+				AND content_rating = 'Everyone'
+				ORDER BY rating DESC)
+ORDER BY rating DESC
+LIMIT 10;
 
 
 
