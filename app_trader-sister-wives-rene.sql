@@ -126,7 +126,31 @@ WHERE app_store_apps.price = 0.00
 ORDER BY play_store_apps.review_count DESC
 
 
+SELECT * FROM play_store_apps
+			WHERE category = 'GAME'
+		 	And rating > 4.25
+			AND review_count > 2000
+			AND content_rating = 'Everyone'
+			ORDER BY rating DESC, price
 
+
+SELECT * FROM app_store_apps
+	WHERE primary_genre ILIKE 'games'
+	AND rating > 4.25
+	AND review_count::NUMERIC > 20000
+	AND content_rating = '4+'
+	AND price < 2.51
+	AND name IN 
+		(SELECT name FROM play_store_apps
+			WHERE category = 'GAME'
+		 	And rating > 4.25
+			AND review_count > 20000
+			AND content_rating = 'Everyone'
+			ORDER BY rating DESC)
+ORDER BY rating DESC
+
+
+-------------------
 
 
 SELECT *
@@ -137,8 +161,6 @@ SELECT *
 FROM play_store_apps
 WHERE name ILIKE '%usa%'
 
-
-----------
 
 SELECT DISTINCT name, app_store_apps.price AS app_store_price,play_store_apps.price AS play_store_price,app_store_apps.content_rating AS app_store_age_rating,
 play_store_apps.content_rating AS play_store_age_rating, app_store_apps.review_count::integer AS app_store_review_count,play_store_apps.review_count AS play_store_review_count,
@@ -159,4 +181,18 @@ WHERE name ILIKE '%USA%'
 	OR name ILIKE '%firework%'
 	
 	
-	
+-------COUNT BY GENRE
+SELECT primary_genre, COUNT(*)
+	FROM								
+	(SELECT *, 
+	ROUND(((((rating/.25)*6)+12)/12),1) AS lifespan_years,
+		(CASE WHEN price < 2.50 THEN 25000
+		WHEN price >= 2.50 THEN price * 10000 END) AS acquire_cost
+		FROM app_store_apps
+		WHERE ROUND(((((rating/.25)*6)+12)/12),1) > 10
+		AND (CASE WHEN price < 2.50 THEN 25000
+		WHEN price >= 2.50 THEN price * 10000 END) < 35000
+		AND content_rating = '4+'
+		ORDER BY lifespan_years DESC, acquire_cost ASC) AS desired_apps
+GROUP BY primary_genre
+ORDER BY count DESC;
